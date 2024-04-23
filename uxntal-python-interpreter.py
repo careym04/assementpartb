@@ -4,6 +4,7 @@
 #! "could" or "(optional)" means you can get extra marks for doing it, but you don't lose marks for not doing it
 
 from enum import Enum
+import textwrap
 
 #! Your program could set these flags on command line
 WW = False
@@ -11,21 +12,37 @@ V = False # Verbose, explain a bit what happens
 VV = False # More verbose, explain in more detail what happens
 DBG = False # Debug info
 
+
 #!! Your program should read the program text from a `.tal` file
-programText = """
+file_path = "ex01_1_simple_calc.tal"
+def readProgramFromFile(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            file_contents = file.read()
+            return file_contents
+    except FileNotFoundError:
+        print(f"Error: File '{file_path}' not found.")
+        return None
+    except Exception as e:
+        print(f"Error reading file '{file_path}': {e}")
+        return None
+    
+    
+programText = programText = """
 |0100
 ;array LDA
 ;array #01 ADD LDA
 ADD
 ;print JSR2
 BRK
-
 @print
-    #18 DEO
+#18 DEO
 JMP2r
-
 @array 11 22 33
 """
+
+programText = readProgramFromFile(file_path)
+print(programText)
 
 # These are the different types of tokens
 class T(Enum):
@@ -49,8 +66,14 @@ class Uxn:
     # First unused address, only used for verbose
     free = 0
 
+
+
+
+    
 #!! Complete the parser
 def parseToken(tokenStr):
+    if len(tokenStr) == 0:
+        return None  # Return None if the string is empty
     if tokenStr[0] == '#':
         valStr=tokenStr[1:]
         val = int(valStr,16)
@@ -103,6 +126,10 @@ def parseToken(tokenStr):
         val = tokenStr[1:]
         return(T.ADDR, val)
     
+    elif tokenStr[0] == '$':
+        val = tokenStr[1:]
+        return (T.PAD, val)
+    
     
 #! Handle relative padding
     # elif tokenStr[0] == ...
@@ -112,7 +139,7 @@ def parseToken(tokenStr):
     
     elif tokenStr[0] == ',':
         val = tokenStr[1:]
-        return(T.ADDR, val)
+        return(T.PAD, val)
     
     
     elif tokenStr[0].isupper():
@@ -150,7 +177,8 @@ def store(args,sz,uxn):
 
 # LDA
 def load(args,sz, uxn):
-    return uxn.memory[args[0]][1] # memory has tokens, stacks have values
+    return uxn.memory[args[0]][1] # memory has tokens, stacks have va
+
 
 # Control operations
 # JSR
@@ -228,21 +256,54 @@ def over(rs,sz,uxn): # a b -> a b a
 # ALU operations
 # ADD
 def add(args,sz,uxn):
+    
     return args[0] + args[1]
 
 
 
 def sub(args,sz,uxn):
+    
     return args[0] - args[1]
+    
 
 
 
 def mul(args, sz, uxn):
+    
+    
     return args[0] * args[1]
 
 
 def div(args,sz,uxn):
+    
     return args[0] / args[1]
+
+
+
+
+   
+    
+   
+    
+
+def inc(rs, sz, uxn):
+    # Pop the value from the stack
+    value = uxn.stacks[rs].pop()[0]
+    
+    # Increment the value by 1
+    value += 1
+    
+    # Push the incremented value back onto the stack
+    uxn.stacks[rs].append((value, sz))
+
+
+# def deviceOutput(args, sz, uxn):
+#     char_code = args[0]
+#     if char_code > 255:
+#         print("Warning: Character code exceeds ASCII range")
+#     else:
+#         print(chr(char_code), end='')
+
 
 #!! Implement SUB, MUL, DIV, INC (similar to `ADD`)
 #! def sub(args,sz,uxn):
@@ -265,17 +326,23 @@ def div(args,sz,uxn):
 
 
 def equ(args,sz,uxn):
+    
     return args[0] == args[1]
 
 def neq(args,sz,uxn):
+   
     return args[0] != args[1]
 
 def lth(args,sz,uxn):
+   
     return args[0] < args[1]
 
 
 def gth(args,sz,uxn):
+    
     return args[0] > args[1]
+
+
 
 callInstr = {
 #!! Add SUB, MUL, DIV, INC; EQU, NEQ, LTH, GTH done
@@ -299,7 +366,8 @@ callInstr = {
     'OVR' : (over,0,False),
     'NIP' : (nip,0,False),
     'POP' : (pop,0, False),
-    'ROT' : (rot, 0, False)
+    'ROT' : (rot, 0, False),
+    'INC' : (inc, 0, True)
 #!! Add POP, ROT done
 
 }
@@ -362,6 +430,13 @@ def executeInstr(token,uxn):
         else:
             action(args,sz,uxn)
 
+
+
+
+
+
+
+
 #!! Tokenise the program text using a function `tokeniseProgramText`
 #! That means splitting the string `programText` on whitespace
 #! You must remove any comments first, I suggest you use a helper function stripComments
@@ -370,26 +445,40 @@ def executeInstr(token,uxn):
 
 
 def stripComments(programText):
+    programText = textwrap.dedent(programText)
     strippedProgramText = ""
     inComment = False
     for char in programText:
-        if char == '(' :
+        if char == '(':
             inComment = True
-        elif char  == ')':
+        elif char == ')':
             inComment = False
+        elif char == '\n':
+            strippedProgramText += ' '  # Replace newline with space
         elif not inComment:
             strippedProgramText += char
-        
-    return strippedProgramText
+    
+    return strippedProgramText.strip()
 
 def tokeniseProgramText(programText):
     #! ...
-    programText = stripComments(programText)
     
+    
+    
+   
     tokenStrings = programText.split(" ")
+    tokenStrings = [token.strip() for token in tokenStrings if token.strip()]
+
+    
+    programText.strip()
+    
+    
+    
+    
+    
     
         
-    
+
     return tokenStrings #! replace this with the actual code
 
 
@@ -401,11 +490,13 @@ def tokeniseProgramText(programText):
 def populateMemoryAndBuildSymbolTable(tokens,uxn):
     pc = 0
     for token in tokens:
+         # Add this line to track tokens
         if token == (T.MAIN,):
             pc = 0x0100
         elif token[0] == T.ADDR:
             pc = token[1]
         elif token[0] == T.PAD: # relative only
+            print(token)
             pc = pc + token[1]
         elif token[0] == T.LABEL:
             labelName = token[1]
@@ -415,7 +506,7 @@ def populateMemoryAndBuildSymbolTable(tokens,uxn):
             pc = pc + 1
     uxn.free = pc
     
-    resolveSymbols(uxn)
+    
 
 # Once the symbol table has been built, replace every symbol by its address
 #!! Implement the code to replace every label reference by an address
@@ -448,10 +539,15 @@ def runProgram(uxn):
     uxn.progCounter = 0x100 # all programs must start at 0x100
     while True:
 #!! read the token from memory at that address
+        
         token = uxn.memory[uxn.progCounter]
         #! token = ...
         if token[0] == T.LIT:
-            uxn.stacks[0].append(token[1])
+           
+            
+            uxn.stacks[0].append((token[1], token[2]))
+            
+            
         elif token[0] == T.INSTR:
             executeInstr(token, uxn)
         if DBG:
@@ -463,6 +559,7 @@ def runProgram(uxn):
         #!         ...
         #!     case ...:
         #!         ...
+        
 #!! Increment the program counter
         uxn.progCounter +=1
         #! ...
@@ -474,6 +571,8 @@ programText_noComments = stripComments(programText)
 tokenStrings = tokeniseProgramText(programText_noComments)
 tokensWithStrings = map(parseToken,tokenStrings)
 
+
+
 tokens=[]
 for item in tokensWithStrings:
     if type(item) == list:
@@ -484,7 +583,9 @@ for item in tokensWithStrings:
 
 populateMemoryAndBuildSymbolTable(tokens,uxn)
 
+
 resolveSymbols(uxn)
+
 
 if DBG:
     for pc in range(256,uxn.free):
