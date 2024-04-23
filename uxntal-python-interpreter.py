@@ -4,17 +4,29 @@
 #! "could" or "(optional)" means you can get extra marks for doing it, but you don't lose marks for not doing it
 
 from enum import Enum
-import textwrap
+
 
 #! Your program could set these flags on command line
-WW = False
-V = False # Verbose, explain a bit what happens
-VV = False # More verbose, explain in more detail what happens
-DBG = False # Debug info
 
+
+WW = True
+V = True # Verbose, explain a bit what happens
+VV = True  # More verbose, explain in more detail what happens
+DBG = True # Debug info
+
+
+
+WW = False
+V = False# Verbose, explain a bit what happens
+VV = False  # More verbose, explain in more detail what happens
+DBG = False# Debug info
 
 #!! Your program should read the program text from a `.tal` file
-file_path = "ex01_1_simple_calc.tal"
+
+
+
+file_path = "simple-message.tal"
+
 def readProgramFromFile(file_path):
     try:
         with open(file_path, 'r') as file:
@@ -26,6 +38,12 @@ def readProgramFromFile(file_path):
     except Exception as e:
         print(f"Error reading file '{file_path}': {e}")
         return None
+    
+ 
+
+    
+
+    
     
     
 programText = programText = """
@@ -70,20 +88,24 @@ class Uxn:
 
 
     
-#!! Complete the parser
+
 def parseToken(tokenStr):
     if len(tokenStr) == 0:
-        return None  # Return None if the string is empty
+        return None 
     if tokenStr[0] == '#':
         valStr=tokenStr[1:]
         val = int(valStr,16)
+        
         if len(valStr)==2:
             return (T.LIT,val,1)
         else:
             return (T.LIT,val,2)
+        
+        
     if tokenStr[0] == '"':
         chars =list(tokenStr[1:])
         return list(map(lambda c: (T.LIT, ord(c),1),chars))
+    
     elif tokenStr[0] == ';':
         val = tokenStr[1:]
         return (T.REF,val,2)
@@ -92,10 +114,10 @@ def parseToken(tokenStr):
     #     ...
     #     return (T.REF,val,1) DONE
     
-    elif tokenStr[0] == ',&':
+    elif tokenStr.startswith(',&'):
         val = tokenStr[2:]
         
-        return (T.REF,val,2)
+        return (T.REF,val,1)
         
     elif tokenStr[0] == '@':
         val = tokenStr[1:]
@@ -122,12 +144,12 @@ def parseToken(tokenStr):
     
     
     
-    elif tokenStr[0] == '|':
-        val = tokenStr[1:]
-        return(T.ADDR, val)
+    elif tokenStr.startswith('|'):
+        val = int(tokenStr[1:], 16)  
+        return(T.PAD, val)
     
-    elif tokenStr[0] == '$':
-        val = tokenStr[1:]
+    elif tokenStr.startswith('$'):
+        val = int(tokenStr[1:], 16)
         return (T.PAD, val)
     
     
@@ -137,9 +159,9 @@ def parseToken(tokenStr):
     #     return (...) DONE
     
     
-    elif tokenStr[0] == ',':
-        val = tokenStr[1:]
-        return(T.PAD, val)
+    # elif tokenStr[0] == ',':
+    #     val = tokenStr[1:]
+    #     return(T.PAD, val)
     
     
     elif tokenStr[0].isupper():
@@ -196,8 +218,9 @@ def condJump(args,sz,uxn):
 
 # Stack manipulation operations
 # STH
-def stash(rs,sz,uxn):
-    uxn.stacks[1-rs].append(uxn.stacks[rs].pop())
+def stash(rs, sz, uxn):
+    value = uxn.stacks[1 - rs].pop()
+    uxn.stacks[rs].append(value)
 
 
 
@@ -263,7 +286,7 @@ def add(args,sz,uxn):
 
 def sub(args,sz,uxn):
     
-    return args[0] - args[1]
+    return args[1] - args[0]
     
 
 
@@ -276,7 +299,7 @@ def mul(args, sz, uxn):
 
 def div(args,sz,uxn):
     
-    return args[0] / args[1]
+    return args[1] // args[0]
 
 
 
@@ -286,15 +309,8 @@ def div(args,sz,uxn):
    
     
 
-def inc(rs, sz, uxn):
-    # Pop the value from the stack
-    value = uxn.stacks[rs].pop()[0]
-    
-    # Increment the value by 1
-    value += 1
-    
-    # Push the incremented value back onto the stack
-    uxn.stacks[rs].append((value, sz))
+def inc(args, sz, uxn):
+    return args[0] + 1
 
 
 # def deviceOutput(args, sz, uxn):
@@ -335,12 +351,12 @@ def neq(args,sz,uxn):
 
 def lth(args,sz,uxn):
    
-    return args[0] < args[1]
+    return args[1] < args[0]
 
 
 def gth(args,sz,uxn):
     
-    return args[0] > args[1]
+    return args[1] > args[0]
 
 
 
@@ -367,7 +383,7 @@ callInstr = {
     'NIP' : (nip,0,False),
     'POP' : (pop,0, False),
     'ROT' : (rot, 0, False),
-    'INC' : (inc, 0, True)
+    'INC' : (inc, 1, True),
 #!! Add POP, ROT done
 
 }
@@ -445,7 +461,7 @@ def executeInstr(token,uxn):
 
 
 def stripComments(programText):
-    programText = textwrap.dedent(programText)
+    
     strippedProgramText = ""
     inComment = False
     for char in programText:
@@ -459,18 +475,25 @@ def stripComments(programText):
             strippedProgramText += char
     
     return strippedProgramText.strip()
+    # lines = programText.split('\n') # Split the text on newline characters
+    # # Remove comments from each line
+    # stripped_lines = [line.split('( ')[0].split(' )')[0] for line in lines]
+    # # Join the lines back together
+    # stripped_text = '\n'.join(stripped_lines)
+    # return stripped_text
+ 
 
 def tokeniseProgramText(programText):
-    #! ...
+    # #! ...
     
     
     
    
-    tokenStrings = programText.split(" ")
-    tokenStrings = [token.strip() for token in tokenStrings if token.strip()]
+    # tokenStrings = programText.split()
+    # tokenStrings = [token.strip() for token in tokenStrings if token.strip()]
 
     
-    programText.strip()
+    # programText.strip()
     
     
     
@@ -479,7 +502,13 @@ def tokeniseProgramText(programText):
     
         
 
-    return tokenStrings #! replace this with the actual code
+    # return tokenStrings #! replace this with the actual code
+    
+    # Remove comments
+    programText_noComments = stripComments(programText)
+    # Tokenize the program text by splitting on whitespace
+    tokenStrings = programText_noComments.split()
+    return tokenStrings
 
 
 
@@ -497,6 +526,7 @@ def populateMemoryAndBuildSymbolTable(tokens,uxn):
             pc = token[1]
         elif token[0] == T.PAD: # relative only
             print(token)
+            print(pc)
             pc = pc + token[1]
         elif token[0] == T.LABEL:
             labelName = token[1]
@@ -525,7 +555,7 @@ def resolveSymbols(uxn):
             labelName = token[1]
             if labelName in uxn.symbolTable:
                 address = uxn.symbolTable[labelName]
-                uxn.memory[index] = (T.LIT, address, 2)
+                uxn.memory[index] = (T.LIT, address, token[2])
 
 # Running the program mean setting the program counter `uxn.progCounter` to the address of the first token;
 #  - read the token from memory at that address
@@ -536,40 +566,28 @@ def resolveSymbols(uxn):
 def runProgram(uxn):
     if VV:
         print('*** RUNNING ***')
-    uxn.progCounter = 0x100 # all programs must start at 0x100
+    uxn.progCounter = 0x100
     while True:
-#!! read the token from memory at that address
-        
         token = uxn.memory[uxn.progCounter]
-        #! token = ...
-        if token[0] == T.LIT:
-           
-            
-            uxn.stacks[0].append((token[1], token[2]))
-            
-            
-        elif token[0] == T.INSTR:
-            executeInstr(token, uxn)
         if DBG:
             print('PC:',uxn.progCounter,' TOKEN:',token)
-        #! You can use an if/elif if you prefer; there are only two cases (and an optional third to catch potential errors)
-        #! because the program at this point consists entirely of instructions and literals
-        #! match ...:
-        #!     case ...:
-        #!         ...
-        #!     case ...:
-        #!         ...
-        
-#!! Increment the program counter
-        uxn.progCounter +=1
-        #! ...
+        if token[0] == T.LIT:
+            uxn.stacks[0].append((token[1], token[2]))
+        elif token[0] == T.INSTR:
+            executeInstr(token, uxn)
+        else:
+            print("Error: Invalid token type encountered")
+        uxn.progCounter += 1
         if DBG:
             print('(WS,RS):',uxn.stacks)
+ 
 
 uxn = Uxn()
 programText_noComments = stripComments(programText)
 tokenStrings = tokeniseProgramText(programText_noComments)
 tokensWithStrings = map(parseToken,tokenStrings)
+
+print(programText_noComments)
 
 
 

@@ -1,7 +1,10 @@
 |0100
 
 ;write_array
+
+
 #0010 ;loop JSR2
+
 ;array LDA2 #30 ADD #18 DEO
 
 BRK
@@ -38,5 +41,7 @@ BRK
 
 |0200
 @array $10
+
+
 
 

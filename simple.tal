@@ -1,7 +1,0 @@
-|0100 ( every program starts at address 256 )
-#07
-#05
-#09
-ADD
-
-BRK
